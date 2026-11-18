@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Teste MQTT por WebSocket</title>
+</head>
+<body>
+  <h1>Teste do broker por WebSocket</h1>
+  <p id="status">Conectando...</p>
+  <pre id="log"></pre>
+
+  <script src="js/vendor/mqtt.min.js"></script>
+  <script>
+    const statusEl = document.getElementById('status');
+    const logEl = document.getElementById('log');
+    const url = 'ws://' + location.hostname + ':9001';
+    const cliente = mqtt.connect(url);
+
+    cliente.on('connect', () => {
+      cliente.subscribe('teste/#', { qos: 1 }, (erro, lista) => {
+        const aceito = !erro && lista && lista.some(a => a.qos <= 2);
+        statusEl.textContent = aceito
+          ? 'Pronto para receber em teste/#'
+          : 'Falha ao assinar teste/#';
+      });
+    });
+
+    cliente.on('message', (topico, mensagem) => {
+      logEl.textContent += topico + ' -> ' + mensagem.toString() + '\n';
+    });
+
+    cliente.on('close', () => {
+      statusEl.textContent = 'Conexão perdida';
+    });
+
+    cliente.on('error', erro => {
+      statusEl.textContent = 'Erro de conexão: ' + erro.message;
+    });
+  </script>
+</body>
+</html>
