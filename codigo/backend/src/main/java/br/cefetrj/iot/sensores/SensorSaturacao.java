@@ -1,0 +1,64 @@
+package br.cefetrj.iot.sensores;
+
+import br.cefetrj.iot.contrato.Leitura;
+import br.cefetrj.iot.contrato.TipoSinal;
+import java.time.OffsetDateTime;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
+
+public final class SensorSaturacao implements Sensor {
+    private static final double ROTINA_MIN = 96.0;
+    private static final double ROTINA_MAX = 99.0;
+    private static final double ROTINA_PASSO = 1.0;
+
+    private static final double CRISE_MIN = 83.0;
+    private static final double CRISE_MAX = 88.0;
+    private static final double CRISE_PASSO = 1.5;
+
+    private final Map<String, Double> ultimoValorPorLeito = new ConcurrentHashMap<>();
+
+    @Override
+    public TipoSinal getTipoSinal() {
+        return TipoSinal.SATURACAO;
+    }
+
+    @Override
+    public Leitura coletar(LeitoSimulado leito) {
+        Objects.requireNonNull(leito, "O leito não pode ser nulo.");
+        ModoOperacao modo = leito.modoAtual(getTipoSinal());
+        double valor = calcularProximoValor(leito.chaveUnica(), modo);
+
+        return Leitura.simples(
+                UUID.randomUUID().toString(),
+                leito.pacienteId(),
+                leito.ala(),
+                leito.leito(),
+                getTipoSinal(),
+                valor,
+                OffsetDateTime.now().toString()
+        );
+    }
+
+    private double calcularProximoValor(String chaveLeito, ModoOperacao modo) {
+        double min = (modo == ModoOperacao.CRISE) ? CRISE_MIN : ROTINA_MIN;
+        double max = (modo == ModoOperacao.CRISE) ? CRISE_MAX : ROTINA_MAX;
+        double passo = (modo == ModoOperacao.CRISE) ? CRISE_PASSO : ROTINA_PASSO;
+
+        double atual = ultimoValorPorLeito.getOrDefault(chaveLeito, (min + max) / 2.0);
+        if (atual < min || atual > max) {
+            atual = (min + max) / 2.0;
+        }
+
+        double delta = ThreadLocalRandom.current().nextDouble(-passo, passo);
+        double proximo = Math.round(limitar(atual + delta, min, max));
+        ultimoValorPorLeito.put(chaveLeito, proximo);
+        return proximo;
+    }
+
+    private static double limitar(double valor, double min, double max) {
+        return Math.max(min, Math.min(max, valor));
+    }
+}
