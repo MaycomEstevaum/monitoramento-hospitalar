@@ -7,15 +7,15 @@
 - **Maven:** Apache Maven `3.10.1`
 - **Docker Compose:** `v5.7.0` (Docker Desktop)
 - **Git:** `2.49.0.windows.1`
-- **Broker:** `eclipse-mosquitto:2` _(preencher a versão exata da primeira linha de `docker compose exec mosquitto mosquitto -h` ao subir o container)_
+- **Broker:** `eclipse-mosquitto:2` _(preencher a versÃ£o exata da primeira linha de `docker compose exec mosquitto mosquitto -h` ao subir o container)_
 - **Dependências Java:** Eclipse Paho `1.2.5`, Gson `2.10.1` e JUnit `5.10.2`
-- **Front-end:** MQTT.js `5.16.1` incluído localmente em `frontend/js/vendor/mqtt.min.js`
+- **Front-end:** MQTT.js `5.16.1` incluÃ­do localmente em `frontend/js/vendor/mqtt.min.js`
 
-## Como validar a Funda��o
+## Como validar a Fundação
 
 1. Dentro de `codigo`, executar `docker compose up -d`.
 2. Dentro de `codigo/backend`, executar `mvn clean test`.
-3. Abrir `codigo/frontend/teste-ws.html` com Live Server e esperar a confirma��o da assinatura (`Pronto para receber em teste/#`).
+3. Abrir `codigo/frontend/teste-ws.html` com Live Server e esperar a confirmação da assinatura (`Pronto para receber em teste/#`).
 4. Em um terminal dentro de `codigo/backend`, executar:
    ```powershell
    mvn exec:java "-Dexec.mainClass=br.cefetrj.iot.demo.AssinanteTesteMain"
