@@ -1,0 +1,5 @@
+Bibliotecas incluidas nesta pasta, usadas so para falar MQTT com o broker
+
+mqtt-client-1.16.jar: Apache License 2.0
+hawtbuf-1.11.jar: Apache License 2.0
+hawtdispatch-1.22.jar e hawtdispatch-transport-1.22.jar: Apache License 2.0
