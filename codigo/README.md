@@ -6,7 +6,7 @@ O Mosquitto encaminha as mensagens aos assinantes de cada tópico (**Publish-Sub
 
 [Executar a Etapa 5](#testar-o-ciclo-do-leito-01) · [Tópicos MQTT](#como-o-projeto-usa-publish-subscribe) · [Testes automatizados](#testes-automatizados) · [Executar a Etapa 4](#executar-o-simulador-e-o-classificador-etapa-4) · [Resultados confirmados da Etapa 4](#resultados-confirmados-no-leito-01) · [Ambiente utilizado](#ambiente-utilizado)
 
-##Etapa 6 — em andamento.
+## Etapa 6 — em andamento.
 
 A primeira versão do painel de enfermagem exibe, em tempo real, a frequência cardíaca, a prioridade e o horário da coleta do leito 01 da UTI. O painel recebe as leituras classificadas por MQTT sobre WebSocket
 
