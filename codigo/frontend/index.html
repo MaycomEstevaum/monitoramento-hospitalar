@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Leito 01 | Monitoramento hospitalar</title>
+
+  <link rel="stylesheet" href="css/estilos.css">
+  <script defer src="js/vendor/mqtt.min.js"></script>
+  <script defer src="js/enfermagem.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <strong>Painel de enfermagem</strong>
+      <span id="conexao" role="status">Conectando…</span>
+    </header>
+
+    <article>
+      <p class="ala">Unidade de terapia intensiva</p>
+      <h1>Leito 01</h1>
+      <p id="paciente">Aguardando paciente</p>
+
+      <section>
+        <h2>Frequência cardíaca</h2>
+        <p class="medida"><b id="valor">—</b> bpm</p>
+      </section>
+
+      <dl>
+        <div>
+          <dt>Prioridade</dt>
+          <dd><span id="prioridade">—</span></dd>
+        </div>
+        <div>
+          <dt>Horário da coleta</dt>
+          <dd id="hora">—</dd>
+        </div>
+      </dl>
+
+      <p id="aviso" role="status">Aguardando a primeira leitura.</p>
+    </article>
+  </main>
+</body>
+</html>

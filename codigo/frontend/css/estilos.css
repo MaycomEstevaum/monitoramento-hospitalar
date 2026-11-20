@@ -1,0 +1,64 @@
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: #edf4f3;
+  color: #173839;
+  font: 1rem/1.5 Inter, "Segoe UI", sans-serif;
+}
+
+main {
+  width: min(94%, 640px);
+  margin: clamp(24px, 8vh, 80px) auto;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+#conexao, #aviso, #paciente, dt { color: #486565; }
+
+article {
+  padding: clamp(22px, 5vw, 40px);
+  border: 1px solid #cadbd8;
+  border-top: 5px solid #187a70;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 8px 30px #1738390d;
+}
+
+p, h1, h2, dl, dd { margin: 0; }
+
+.ala { color: #17685e; font-weight: 600; }
+h1 { font-size: 2.5rem; letter-spacing: -.04em; }
+
+section {
+  background: #f1f7f5;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 22px 0;
+}
+
+h2, dt { font-size: .95rem; }
+.medida { color: #17685e; }
+#valor { font-size: clamp(3.5rem, 10vw, 5rem); line-height: 1.2; }
+
+dl { display: flex; flex-wrap: wrap; gap: 18px 48px; }
+dd { margin-top: 4px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+#prioridade {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 20px;
+  background: #edf1f2;
+}
+
+#prioridade[data-nivel="ROTINA"]  { background: #d8f2e7; color: #125a42; }
+#prioridade[data-nivel="ATENCAO"] { background: #fff0c2; color: #704700; }
+#prioridade[data-nivel="CRITICO"] { background: #ffe0df; color: #922e30; }
+
+#aviso { margin-top: 20px; font-size: .9rem; }
