@@ -114,6 +114,18 @@ mvn "-Dtest=TopicosTest,ConversorJsonTest" test
 mvn "-Dtest=PublicadorSensorTest" test
 mvn "-Dtest=RegrasClassificacaoTest,ServicoClassificadorTest" test
 ```
+## Como o projeto usa Publish-Subscribe
+
+No projeto, **publicar** significa enviar uma mensagem JSON ao broker Mosquitto em um tópico MQTT. **Assinar** significa informar ao broker quais tópicos um programa quer acompanhar. Assim, o simulador publica cada coleta uma vez, e tanto o classificador quanto o terminal de observação podem recebê-la. Para acompanhar outro leito, basta mudar o filtro da assinatura.
+
+| Mensagem | Quem publica | Tópico da publicação | Quem recebe na etapa 4 | QoS publicado |
+| --- | --- | --- | --- | --- |
+| Leitura bruta | Simulador de sensores | `sensores/{ala}/{leito}/{sinal}` | O classificador assina `sensores/#`. O terminal também pode assinar o sinal de um leito específico. | 1 |
+| Leitura classificada | Classificador | `hospital/{ala}/{leito}/{sinal}/{prioridade}` | O terminal assina as saídas de interesse, como `hospital/uti/leito-01/frequencia/+`. | `ROTINA` = 0, `ATENCAO` = 1, `CRITICO` = 2 |
+
+O **classificador exerce os dois papéis na mesma conexão MQTT**. `ClassificadorMain` mantém a assinatura das leituras brutas. A cada entrada válida, `ServicoClassificador` aplica a estratégia do sinal e publica o resultado. O **Strategy** determina a prioridade e o motivo. O **Publish-Subscribe** permite que os demais programas recebam esse resultado pelos tópicos que assinaram.
+
+[Publicador dos sensores](backend/src/main/java/br/cefetrj/iot/sensores/PublicadorSensor.java) · [Assinatura do classificador](backend/src/main/java/br/cefetrj/iot/classificador/ClassificadorMain.java) · [Publicação do resultado](backend/src/main/java/br/cefetrj/iot/classificador/ServicoClassificador.java) · [Contrato MQTT](contrato.md)
 
 ## Onde está o Factory Method
 
