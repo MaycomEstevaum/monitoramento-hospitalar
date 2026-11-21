@@ -1,0 +1,1 @@
+iniciarPainel("medico");

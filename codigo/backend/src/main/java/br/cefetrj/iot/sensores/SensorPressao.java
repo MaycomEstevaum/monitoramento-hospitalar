@@ -5,6 +5,7 @@ import br.cefetrj.iot.contrato.TipoSinal;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -37,16 +38,26 @@ public final class SensorPressao implements Sensor {
     @Override
     public Leitura coletar(LeitoSimulado leito) {
         Objects.requireNonNull(leito, "O leito não pode ser nulo.");
-        ModoOperacao modo = leito.modoAtual(getTipoSinal());
+        OptionalDouble progresso = leito.progressoRecuperacao(getTipoSinal());
         String chave = leito.chaveUnica();
+        double sistolica;
+        double diastolica;
+        if (progresso.isPresent()) {
+            double p = progresso.getAsDouble();
+            sistolica = Math.round(195.0 - 53.0 * p);
+            diastolica = Math.round(128.0 - 36.0 * p);
+            ultimaSistolicaPorLeito.put(chave, sistolica);
+            ultimaDiastolicaPorLeito.put(chave, diastolica);
+        } else {
+            ModoOperacao modo = leito.modoAtual(getTipoSinal());
+            sistolica = (modo == ModoOperacao.CRISE)
+                    ? calcularProximo(ultimaSistolicaPorLeito, chave, SISTOLICA_CRISE_MIN, SISTOLICA_CRISE_MAX, SISTOLICA_CRISE_PASSO)
+                    : calcularProximo(ultimaSistolicaPorLeito, chave, SISTOLICA_ROTINA_MIN, SISTOLICA_ROTINA_MAX, SISTOLICA_ROTINA_PASSO);
 
-        double sistolica = (modo == ModoOperacao.CRISE)
-                ? calcularProximo(ultimaSistolicaPorLeito, chave, SISTOLICA_CRISE_MIN, SISTOLICA_CRISE_MAX, SISTOLICA_CRISE_PASSO)
-                : calcularProximo(ultimaSistolicaPorLeito, chave, SISTOLICA_ROTINA_MIN, SISTOLICA_ROTINA_MAX, SISTOLICA_ROTINA_PASSO);
-
-        double diastolica = (modo == ModoOperacao.CRISE)
-                ? calcularProximo(ultimaDiastolicaPorLeito, chave, DIASTOLICA_CRISE_MIN, DIASTOLICA_CRISE_MAX, DIASTOLICA_CRISE_PASSO)
-                : calcularProximo(ultimaDiastolicaPorLeito, chave, DIASTOLICA_ROTINA_MIN, DIASTOLICA_ROTINA_MAX, DIASTOLICA_ROTINA_PASSO);
+            diastolica = (modo == ModoOperacao.CRISE)
+                    ? calcularProximo(ultimaDiastolicaPorLeito, chave, DIASTOLICA_CRISE_MIN, DIASTOLICA_CRISE_MAX, DIASTOLICA_CRISE_PASSO)
+                    : calcularProximo(ultimaDiastolicaPorLeito, chave, DIASTOLICA_ROTINA_MIN, DIASTOLICA_ROTINA_MAX, DIASTOLICA_ROTINA_PASSO);
+        }
 
         return Leitura.pressao(
                 UUID.randomUUID().toString(),

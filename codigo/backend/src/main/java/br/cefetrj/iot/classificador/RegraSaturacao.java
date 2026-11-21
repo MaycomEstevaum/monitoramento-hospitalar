@@ -18,15 +18,15 @@ public final class RegraSaturacao implements RegraClassificacao {
         if (saturacao < 90.0) {
             return new ResultadoClassificacao(
                     Prioridade.CRITICO,
-                    "Saturação de oxigênio na faixa crítica da simulação");
+                    "Saturação de oxigênio na faixa crítica");
         }
         if (saturacao >= 95.0) {
             return new ResultadoClassificacao(
                     Prioridade.ROTINA,
-                    "Saturação de oxigênio na faixa de rotina da simulação");
+                    "Saturação de oxigênio na faixa de rotina");
         }
         return new ResultadoClassificacao(
                 Prioridade.ATENCAO,
-                "Saturação de oxigênio na faixa de atenção da simulação");
+                "Saturação de oxigênio na faixa de atenção");
     }
 }

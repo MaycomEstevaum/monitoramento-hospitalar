@@ -9,7 +9,7 @@ O simulador, o classificador, o notificador e as telas trocam JSON em UTF-8 pelo
 | `sensores/{ala}/{leito}/{sinal}` | Simulador | Classificador | 1 | false |
 | `hospital/{ala}/{leito}/{sinal}/{prioridade}` | Classificador | Telas interessadas e, nos críticos, notificador | 0 rotina, 1 atenção, 2 crítico | false |
 | `comandos/alertas/{idAlerta}/{acao}` | Tela | Notificador | 1 | false |
-| `alertas/{ala}/{leito}/{idAlerta}/estado` | Notificador | Telas interessadas | 1 | true |
+| `alertas/{ala}/{leito}/{idAlerta}/estado` | Notificador | Telas interessadas e Simulador (para iniciar recuperação gradual em `RECONHECIDO`) | 1 | true |
 | `respostas/alertas/{idAlerta}/{idComando}` | Notificador | Tela que aguarda aquele comando | 1 | false |
 
 `{...}` é um lugar a preencher. No Java, `Topicos` monta endereços e fornece filtros. No navegador, concentre a montagem em JavaScript compartilhado segundo esta mesma tabela. As páginas usam MQTT.js.
@@ -71,7 +71,7 @@ Tópico `hospital/uti/leito-01/pressao/critico`.
   "sistolica": 185,
   "diastolica": 110,
   "prioridade": "CRITICO",
-  "motivo": "Sistólica na faixa crítica da simulação"
+  "motivo": "Sistólica na faixa crítica"
 }
 ```
 
@@ -92,7 +92,7 @@ Tópico `alertas/uti/leito-01/alt-001/estado`.
   "valorOrigem": null,
   "sistolicaOrigem": 185,
   "diastolicaOrigem": 110,
-  "motivoOrigem": "Sistólica na faixa crítica da simulação",
+  "motivoOrigem": "Sistólica na faixa crítica",
   "estado": "ABERTO",
   "versao": 1,
   "abertoEm": "2026-11-19T14:30:06-03:00",
@@ -145,7 +145,7 @@ Tópico `comandos/alertas/alt-001/resolver`.
   "acao": "RESOLVER",
   "usuarioId": "med-01",
   "instanteComando": "2026-11-19T14:35:00-03:00",
-  "motivoResolucao": "Atendimento simulado concluído"
+  "motivoResolucao": "Pressão estabilizada após atendimento; pico de 185/110 mmHg às 14:30:05"
 }
 ```
 
@@ -175,3 +175,46 @@ Tópico `respostas/alertas/alt-001/cmd-02`.
 O notificador abre o alerta em versão 1 e registra a hora de abertura. Em cada transição aceita, registra o profissional e a hora do notificador, aumenta a versão e publica o estado completo com retenção. A resposta vai ao tópico específico sem retenção. Um comando rejeitado mantém a versão. Quando o alerta existe, a rejeição informa o estado e a versão atuais. Para `ALERTA_INEXISTENTE`, ambos ficam nulos. Um exemplo de outro motivo é `TRANSICAO_INVALIDA`. A tela assina estado e resposta e aguarda o broker confirmar as assinaturas (SUBACK) antes de publicar o comando. A tela acompanha o estado divulgado pelo notificador.
 
 O `EventoAlerta` é interno ao Java. Ele transporta o estado anterior (nulo na abertura), o retrato atual e o instante do evento aos observadores locais. O State que autoriza transições e o Observer que avisa os observadores serão implementados no notificador.
+
+## Controle da área de demonstração do simulador (Etapa 6)
+
+Para acionar crises e recuperação pelo navegador sem acoplamento direto entre interface e programa Java, o simulador assina comandos e publica o modo corrente de cada leito pelo broker.
+
+| Tópico | Publica | Recebe | QoS publicado | Retain |
+| --- | --- | --- | --- | --- |
+| `comandos/simulador/{ala}/{leito}/{sinal}` | Tela | Simulador | 1 | false |
+| `simulador/{ala}/{leito}/estado` | Simulador | Telas com área de demonstração | 1 | true |
+
+No tópico de comando, `{sinal}` aceita `frequencia`, `temperatura`, `saturacao`, `pressao` ou `todos` (quando `tipoSinal` no JSON é `null`). O campo `cenario` aceita `ROTINA` ou `CRISE`. Além disso, o simulador assina `alertas/+/+/+/estado` (QoS 1) para iniciar uma recuperação gradual de 15 segundos (`CRITICO` → `ATENCAO` → `ROTINA`) quando um alerta de uma crise ativa passa para `RECONHECIDO`.
+
+### Comando para o simulador (`ComandoSimulador`)
+
+Tópico `comandos/simulador/uti/leito-01/frequencia`.
+
+```json
+{
+  "idComando": "sim-01",
+  "ala": "uti",
+  "leito": "leito-01",
+  "tipoSinal": "FREQUENCIA",
+  "cenario": "CRISE",
+  "instanteComando": "2026-11-20T19:40:00-03:00"
+}
+```
+
+### Estado retido do simulador (`EstadoSimulador`)
+
+Tópico `simulador/uti/leito-01/estado`.
+
+```json
+{
+  "ala": "uti",
+  "leito": "leito-01",
+  "pacienteId": "PAC-101",
+  "frequencia": "CRISE",
+  "temperatura": "ROTINA",
+  "saturacao": "ROTINA",
+  "pressao": "ROTINA",
+  "atualizadoEm": "2026-11-20T19:40:00-03:00"
+}
+```

@@ -39,4 +39,15 @@ class TopicosTest {
             assertThrows(IllegalArgumentException.class, () -> Topicos.respostaComando(invalido, "cmd-99"));
         }
     }
+
+    @Test
+    void montaControleEEstadoDoSimulador() {
+        assertEquals("comandos/simulador/uti/leito-01/frequencia",
+                Topicos.comandoSimulador("UTI", "Leito 01", TipoSinal.FREQUENCIA));
+        assertEquals("comandos/simulador/enfermaria/leito-03/todos",
+                Topicos.comandoSimulador("Enfermaria", "leito-03", null));
+        assertEquals("simulador/uti/leito-01/estado", Topicos.estadoSimulador("UTI", "Leito 01"));
+        assertEquals("comandos/simulador/+/+/+", Topicos.COMANDOS_SIMULADOR);
+        assertEquals("simulador/+/+/estado", Topicos.ESTADOS_SIMULADOR);
+    }
 }

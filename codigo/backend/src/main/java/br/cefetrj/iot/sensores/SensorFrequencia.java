@@ -5,6 +5,7 @@ import br.cefetrj.iot.contrato.TipoSinal;
 import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -28,8 +29,15 @@ public final class SensorFrequencia implements Sensor {
     @Override
     public Leitura coletar(LeitoSimulado leito) {
         Objects.requireNonNull(leito, "O leito não pode ser nulo.");
-        ModoOperacao modo = leito.modoAtual(getTipoSinal());
-        double valor = calcularProximoValor(leito.chaveUnica(), modo);
+        OptionalDouble progresso = leito.progressoRecuperacao(getTipoSinal());
+        double valor;
+        if (progresso.isPresent()) {
+            valor = Math.round(140.0 - 39.0 * progresso.getAsDouble());
+            ultimoValorPorLeito.put(leito.chaveUnica(), valor);
+        } else {
+            ModoOperacao modo = leito.modoAtual(getTipoSinal());
+            valor = calcularProximoValor(leito.chaveUnica(), modo);
+        }
 
         return Leitura.simples(
                 UUID.randomUUID().toString(),

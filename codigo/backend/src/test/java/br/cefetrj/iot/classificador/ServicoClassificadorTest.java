@@ -75,11 +75,11 @@ class ServicoClassificadorTest {
 
     @ParameterizedTest
     @CsvSource({
-        "185, 110, CRITICO, Sistólica na faixa crítica da simulação",
-        "145, 125, CRITICO, Diastólica na faixa crítica da simulação",
-        "185, 125, CRITICO, Sistólica e diastólica na faixa crítica da simulação",
-        "145, 95, ATENCAO, Sistólica e diastólica na faixa de atenção da simulação",
-        "115, 75, ROTINA, Pressão arterial na faixa de rotina da simulação"
+        "185, 110, CRITICO, Sistólica na faixa crítica",
+        "145, 125, CRITICO, Diastólica na faixa crítica",
+        "185, 125, CRITICO, Sistólica e diastólica na faixa crítica",
+        "145, 95, ATENCAO, Sistólica e diastólica na faixa de atenção",
+        "115, 75, ROTINA, Pressão arterial na faixa de rotina"
     })
     void motivoDaPressaoIdentificaAComponenteOuOEmpate(double s, double d, Prioridade p, String motivo) {
         var regra = new RegraPressao();

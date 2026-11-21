@@ -99,4 +99,26 @@ class ConversorJsonTest {
                 assertThrows(IllegalArgumentException.class, () -> ConversorJson.lerNoTopico(
                                 "sensores/uti/leito-02/pressao", valido, Leitura.class));
         }
+
+        @Test
+        void preservaComandosEEstadosDoSimulador() {
+                ComandoSimulador unico = new ComandoSimulador("sim-01", "uti", "leito-01",
+                                TipoSinal.PRESSAO, ComandoSimulador.Cenario.CRISE, HORA);
+                ComandoSimulador todos = new ComandoSimulador("sim-02", "enfermaria", "leito-03",
+                                null, ComandoSimulador.Cenario.ROTINA, HORA);
+                EstadoSimulador estado = new EstadoSimulador("uti", "leito-01", "PAC-101",
+                                ComandoSimulador.Cenario.ROTINA, ComandoSimulador.Cenario.ROTINA,
+                                ComandoSimulador.Cenario.ROTINA, ComandoSimulador.Cenario.CRISE, HORA);
+
+                assertEquals("comandos/simulador/uti/leito-01/pressao", unico.topico());
+                assertEquals("comandos/simulador/enfermaria/leito-03/todos", todos.topico());
+                assertEquals("simulador/uti/leito-01/estado", estado.topico());
+                verificarIdaEVolta(unico, ComandoSimulador.class);
+                verificarIdaEVolta(todos, ComandoSimulador.class);
+                verificarIdaEVolta(estado, EstadoSimulador.class);
+
+                assertThrows(IllegalArgumentException.class, () -> ConversorJson.lerNoTopico(
+                                "comandos/simulador/uti/leito-02/pressao",
+                                ConversorJson.paraJson(unico), ComandoSimulador.class));
+        }
 }

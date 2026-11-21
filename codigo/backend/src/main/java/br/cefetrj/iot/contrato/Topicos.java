@@ -9,6 +9,8 @@ public final class Topicos {
     public static final String CRITICOS = "hospital/+/+/+/critico";
     public static final String COMANDOS = "comandos/alertas/+/+";
     public static final String ESTADOS = "alertas/+/+/+/estado";
+    public static final String COMANDOS_SIMULADOR = "comandos/simulador/+/+/+";
+    public static final String ESTADOS_SIMULADOR = "simulador/+/+/estado";
 
     private Topicos() {
     }
@@ -57,5 +59,14 @@ public final class Topicos {
 
     public static String estadosDoLeito(String ala, String leito) {
         return "alertas/" + segmento(ala) + "/" + segmento(leito) + "/+/estado";
+    }
+
+    public static String comandoSimulador(String ala, String leito, TipoSinal sinal) {
+        String destinoSinal = sinal == null ? "todos" : sinal.getSegmentoTopico();
+        return "comandos/simulador/" + segmento(ala) + "/" + segmento(leito) + "/" + destinoSinal;
+    }
+
+    public static String estadoSimulador(String ala, String leito) {
+        return "simulador/" + segmento(ala) + "/" + segmento(leito) + "/estado";
     }
 }

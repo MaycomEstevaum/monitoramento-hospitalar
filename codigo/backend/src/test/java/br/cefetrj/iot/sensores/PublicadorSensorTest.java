@@ -1,13 +1,20 @@
 package br.cefetrj.iot.sensores;
 
+import br.cefetrj.iot.classificador.RegraClassificacao;
+import br.cefetrj.iot.classificador.RegraFrequencia;
+import br.cefetrj.iot.classificador.RegraPressao;
+import br.cefetrj.iot.classificador.RegraSaturacao;
+import br.cefetrj.iot.classificador.RegraTemperatura;
 import br.cefetrj.iot.contrato.ConversorJson;
 import br.cefetrj.iot.contrato.Leitura;
+import br.cefetrj.iot.contrato.Prioridade;
 import br.cefetrj.iot.contrato.TipoSinal;
 import br.cefetrj.iot.contrato.Topicos;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -69,6 +76,46 @@ class PublicadorSensorTest {
         conferirRotina(publicarRodada(vizinho));
         alvo.definirModoTodos(ModoOperacao.ROTINA);
         conferirRotina(publicarRodada(alvo));
+    }
+
+    @Test
+    void recuperacaoGradualPassaDeCriticoPorAtencaoAteRotina() throws Exception {
+        AtomicLong agora = new AtomicLong(1_000_000L);
+        LeitoSimulado leito = new LeitoSimulado("uti", "leito-01", "PAC-101", agora::get);
+        Map<TipoSinal, RegraClassificacao> regras = Map.of(
+                TipoSinal.FREQUENCIA, new RegraFrequencia(),
+                TipoSinal.TEMPERATURA, new RegraTemperatura(),
+                TipoSinal.SATURACAO, new RegraSaturacao(),
+                TipoSinal.PRESSAO, new RegraPressao()
+        );
+
+        leito.definirModoTodos(ModoOperacao.CRISE);
+        agora.addAndGet(1_000L);
+        for (TipoSinal sinal : TipoSinal.values()) {
+            assertTrue(leito.iniciarRecuperacaoGradual(sinal, agora.get()));
+        }
+
+        conferirPrioridades(publicarRodada(leito), regras, Prioridade.CRITICO);
+
+        agora.addAndGet(9_000L);
+        conferirPrioridades(publicarRodada(leito), regras, Prioridade.ATENCAO);
+
+        agora.addAndGet(6_000L);
+        Map<TipoSinal, Leitura> rotina = publicarRodada(leito);
+        conferirPrioridades(rotina, regras, Prioridade.ROTINA);
+        conferirRotina(rotina);
+        for (TipoSinal sinal : TipoSinal.values()) {
+            assertFalse(leito.emRecuperacao(sinal));
+            assertEquals(ModoOperacao.ROTINA, leito.modoAtual(sinal));
+        }
+    }
+
+    private static void conferirPrioridades(Map<TipoSinal, Leitura> leituras,
+            Map<TipoSinal, RegraClassificacao> regras, Prioridade esperada) {
+        for (TipoSinal sinal : TipoSinal.values()) {
+            assertEquals(esperada, regras.get(sinal).classificar(leituras.get(sinal)).prioridade(),
+                    () -> "Prioridade inesperada para " + sinal);
+        }
     }
 
     private Map<TipoSinal, Leitura> publicarRodada(LeitoSimulado leito) throws Exception {

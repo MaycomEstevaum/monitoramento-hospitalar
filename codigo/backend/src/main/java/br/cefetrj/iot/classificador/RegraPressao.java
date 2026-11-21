@@ -26,9 +26,9 @@ public final class RegraPressao implements RegraClassificacao {
         if (grauDiastolica > grauSistolica) return diastolica;
 
         String motivo = switch (sistolica.prioridade()) {
-            case ROTINA -> "Pressão arterial na faixa de rotina da simulação";
-            case ATENCAO -> "Sistólica e diastólica na faixa de atenção da simulação";
-            case CRITICO -> "Sistólica e diastólica na faixa crítica da simulação";
+            case ROTINA -> "Pressão arterial na faixa de rotina";
+            case ATENCAO -> "Sistólica e diastólica na faixa de atenção";
+            case CRITICO -> "Sistólica e diastólica na faixa crítica";
         };
         return new ResultadoClassificacao(sistolica.prioridade(), motivo);
     }
@@ -45,31 +45,31 @@ public final class RegraPressao implements RegraClassificacao {
         if (sistolica < 80.0 || sistolica >= 180.0) {
             return new ResultadoClassificacao(
                     Prioridade.CRITICO,
-                    "Sistólica na faixa crítica da simulação");
+                    "Sistólica na faixa crítica");
         }
         if (sistolica >= 90.0 && sistolica <= 139.0) {
             return new ResultadoClassificacao(
                     Prioridade.ROTINA,
-                    "Sistólica na faixa de rotina da simulação");
+                    "Sistólica na faixa de rotina");
         }
         return new ResultadoClassificacao(
                 Prioridade.ATENCAO,
-                "Sistólica na faixa de atenção da simulação");
+                "Sistólica na faixa de atenção");
     }
 
     private static ResultadoClassificacao avaliarDiastolica(double diastolica) {
         if (diastolica < 50.0 || diastolica >= 120.0) {
             return new ResultadoClassificacao(
                     Prioridade.CRITICO,
-                    "Diastólica na faixa crítica da simulação");
+                    "Diastólica na faixa crítica");
         }
         if (diastolica >= 60.0 && diastolica <= 89.0) {
             return new ResultadoClassificacao(
                     Prioridade.ROTINA,
-                    "Diastólica na faixa de rotina da simulação");
+                    "Diastólica na faixa de rotina");
         }
         return new ResultadoClassificacao(
                 Prioridade.ATENCAO,
-                "Diastólica na faixa de atenção da simulação");
+                "Diastólica na faixa de atenção");
     }
 }

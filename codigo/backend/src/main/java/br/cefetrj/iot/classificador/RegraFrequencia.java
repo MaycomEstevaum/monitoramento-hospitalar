@@ -18,15 +18,15 @@ public final class RegraFrequencia implements RegraClassificacao {
         if (bpm < 50.0 || bpm > 120.0) {
             return new ResultadoClassificacao(
                     Prioridade.CRITICO,
-                    "Frequência cardíaca na faixa crítica da simulação");
+                    "Frequência cardíaca na faixa crítica");
         }
         if (bpm >= 60.0 && bpm <= 100.0) {
             return new ResultadoClassificacao(
                     Prioridade.ROTINA,
-                    "Frequência cardíaca na faixa de rotina da simulação");
+                    "Frequência cardíaca na faixa de rotina");
         }
         return new ResultadoClassificacao(
                 Prioridade.ATENCAO,
-                "Frequência cardíaca na faixa de atenção da simulação");
+                "Frequência cardíaca na faixa de atenção");
     }
 }

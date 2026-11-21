@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alertas críticos · Monitoramento hospitalar</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <script defer src="js/vendor/mqtt.min.js"></script>
+  <script defer src="js/conexao-mqtt.js"></script>
+  <script defer src="js/painel.js"></script>
+  <script defer src="js/mobile.js"></script>
+</head>
+<body>
+<header><div class="barra"><div class="marca"><strong>Monitoramento hospitalar</strong><span class="selo-ambiente">Dados simulados</span></div>
+<nav aria-label="Painéis"><a href="index.html">Enfermagem</a><a href="medico.html">Médico</a><a href="mobile.html" aria-current="page">Críticos</a></nav></div></header>
+<main>
+  <div class="titulo"><h1>Alertas críticos</h1><span id="conexao" role="status">Conectando…</span></div>
+  <a class="atalho" href="#atendimento">Ir para alertas</a>
+  <div id="leituras"></div>
+  <section class="box" id="atendimento">
+    <h2>Acompanhamento dos alertas <span id="quantidade">0</span></h2>
+    <p class="muted">Acompanhamento em tempo real do andamento (ABERTO, RECONHECIDO e RESOLVIDO) e dos horários de atendimento.</p>
+    <p id="retorno" role="status"></p>
+    <div id="ativos"></div>
+    <details id="detalhes-resolvidos" open><summary>Alertas resolvidos (<span id="total-resolvidos">0</span>)</summary><div id="resolvidos"></div></details>
+  </section>
+</main>
+</body>
+</html>

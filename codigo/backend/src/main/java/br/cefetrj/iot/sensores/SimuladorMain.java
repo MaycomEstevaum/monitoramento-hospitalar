@@ -1,6 +1,7 @@
 package br.cefetrj.iot.sensores;
 
 import br.cefetrj.iot.contrato.TipoSinal;
+import br.cefetrj.iot.contrato.Topicos;
 import br.cefetrj.iot.mqtt.ClienteMqtt;
 import br.cefetrj.iot.mqtt.ConfiguracaoMqtt;
 import java.io.BufferedReader;
@@ -14,6 +15,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class SimuladorMain {
     private static final long INTERVALO_PUBLICACAO_MS = 1500L;
@@ -21,10 +23,29 @@ public final class SimuladorMain {
     public static void main(String[] args) throws Exception {
         ConfiguracaoMqtt config = ConfiguracaoMqtt.padrao("simulador");
         List<LeitoSimulado> leitos = criarLeitosPadrao();
+        AtomicReference<ControladorSimulador> destinoControlador = new AtomicReference<>();
 
-        try (ClienteMqtt clienteMqtt = new ClienteMqtt(config, (topico, json) -> {})) {
+        try (ClienteMqtt clienteMqtt = new ClienteMqtt(config, (topico, json) -> {
+            ControladorSimulador atual = destinoControlador.get();
+            if (atual == null) {
+                return;
+            }
+            if (topico.startsWith("comandos/simulador/")) {
+                atual.processarComando(topico, json);
+            } else if (topico.startsWith("alertas/") && topico.endsWith("/estado")) {
+                atual.processarEstadoAlerta(topico, json);
+            }
+        })) {
             clienteMqtt.conectar();
-            System.out.println("Simulador conectado ao broker: " + config.brokerUri() + " (clientId=" + config.clientId() + ")");
+            ControladorSimulador controlador = new ControladorSimulador(leitos, clienteMqtt::publicar);
+            destinoControlador.set(controlador);
+            clienteMqtt.assinar(Topicos.COMANDOS_SIMULADOR, 1);
+            clienteMqtt.assinar(Topicos.ESTADOS, 1);
+            controlador.publicarEstadosIniciais();
+            System.out.println("Simulador conectado ao broker: " + config.brokerUri()
+                    + " (clientId=" + config.clientId() + ")");
+            System.out.println("Controle MQTT ativo em " + Topicos.COMANDOS_SIMULADOR + " (QoS 1)");
+            System.out.println("Recuperação gradual (15 s) ativa via " + Topicos.ESTADOS + " (QoS 1)");
 
             List<PublicadorSensor> publicadores = List.of(
                     new PublicadorFrequencia(clienteMqtt),
@@ -37,11 +58,12 @@ public final class SimuladorMain {
             AtomicBoolean executando = new AtomicBoolean(true);
             try {
                 agendador.scheduleAtFixedRate(
-                        () -> publicarCiclo(leitos, publicadores, executando),
+                        () -> publicarCiclo(leitos, publicadores, controlador, executando),
                         0L, INTERVALO_PUBLICACAO_MS, TimeUnit.MILLISECONDS);
                 imprimirAjuda(leitos);
-                executarConsole(leitos);
+                executarConsole(leitos, controlador);
             } finally {
+                destinoControlador.set(null);
                 executando.set(false);
                 encerrarPublicacoes(agendador);
             }
@@ -75,8 +97,12 @@ public final class SimuladorMain {
     }
 
     private static void publicarCiclo(List<LeitoSimulado> leitos, List<PublicadorSensor> publicadores,
-                                     AtomicBoolean executando) {
+                                     ControladorSimulador controlador, AtomicBoolean executando) {
         for (LeitoSimulado leito : leitos) {
+            if (!executando.get()) return;
+            if (leito.concluirRecuperacoesVencidas()) {
+                controlador.publicarEstado(leito);
+            }
             for (PublicadorSensor publicador : publicadores) {
                 if (!executando.get()) return;
                 try {
@@ -85,10 +111,14 @@ public final class SimuladorMain {
                     System.err.println("Falha ao publicar leitura de " + leito.chaveUnica() + ": " + e.getMessage());
                 }
             }
+            if (leito.concluirRecuperacoesVencidas()) {
+                controlador.publicarEstado(leito);
+            }
         }
     }
 
-    private static void executarConsole(List<LeitoSimulado> leitos) throws java.io.IOException {
+    private static void executarConsole(List<LeitoSimulado> leitos, ControladorSimulador controlador)
+            throws java.io.IOException {
         BufferedReader leitor = new BufferedReader(new InputStreamReader(System.in, StandardCharsets.UTF_8));
         while (true) {
             System.out.print("> ");
@@ -106,8 +136,8 @@ public final class SimuladorMain {
             String comando = normalizar(partes[0]);
 
             switch (comando) {
-                case "crise" -> processarAlteracaoModo(partes, leitos, ModoOperacao.CRISE);
-                case "rotina" -> processarAlteracaoModo(partes, leitos, ModoOperacao.ROTINA);
+                case "crise" -> processarAlteracaoModo(partes, leitos, ModoOperacao.CRISE, controlador);
+                case "rotina" -> processarAlteracaoModo(partes, leitos, ModoOperacao.ROTINA, controlador);
                 case "status" -> imprimirStatus(leitos);
                 case "ajuda" -> imprimirAjuda(leitos);
                 case "sair" -> {
@@ -118,7 +148,8 @@ public final class SimuladorMain {
         }
     }
 
-    private static void processarAlteracaoModo(String[] partes, List<LeitoSimulado> leitos, ModoOperacao modo) {
+    private static void processarAlteracaoModo(String[] partes, List<LeitoSimulado> leitos,
+            ModoOperacao modo, ControladorSimulador controlador) {
         if (partes.length != 3) {
             System.out.println("Uso: " + modo.name().toLowerCase(Locale.ROOT) + " <leito> <sinal|todos>");
             return;
@@ -135,6 +166,7 @@ public final class SimuladorMain {
 
         if ("todos".equals(alvoSinal)) {
             leito.definirModoTodos(modo);
+            controlador.publicarEstado(leito);
             System.out.println("Modo " + modo + " aplicado a todos os sinais de " + leito.chaveUnica() + " (" + leito.pacienteId() + ").");
             return;
         }
@@ -147,6 +179,7 @@ public final class SimuladorMain {
 
         TipoSinal sinal = sinalOpt.get();
         leito.definirModo(sinal, modo);
+        controlador.publicarEstado(leito);
         System.out.println("Modo " + modo + " aplicado em " + leito.chaveUnica() + " (" + leito.pacienteId() + ") -> " + sinal.name());
     }
 

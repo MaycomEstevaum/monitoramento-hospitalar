@@ -3,42 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Leito 01 | Monitoramento hospitalar</title>
-
+  <title>Painel de enfermagem · Monitoramento hospitalar</title>
   <link rel="stylesheet" href="css/estilos.css">
   <script defer src="js/vendor/mqtt.min.js"></script>
+  <script defer src="js/conexao-mqtt.js"></script>
+  <script defer src="js/painel.js"></script>
   <script defer src="js/enfermagem.js"></script>
 </head>
 <body>
-  <main>
-    <header>
-      <strong>Painel de enfermagem</strong>
-      <span id="conexao" role="status">Conectando…</span>
-    </header>
-
-    <article>
-      <p class="ala">Unidade de terapia intensiva</p>
-      <h1>Leito 01</h1>
-      <p id="paciente">Aguardando paciente</p>
-
-      <section>
-        <h2>Frequência cardíaca</h2>
-        <p class="medida"><b id="valor">—</b> bpm</p>
-      </section>
-
-      <dl>
-        <div>
-          <dt>Prioridade</dt>
-          <dd><span id="prioridade">—</span></dd>
-        </div>
-        <div>
-          <dt>Horário da coleta</dt>
-          <dd id="hora">—</dd>
-        </div>
-      </dl>
-
-      <p id="aviso" role="status">Aguardando a primeira leitura.</p>
-    </article>
-  </main>
+<header><div class="barra"><div class="marca"><strong>Monitoramento hospitalar</strong><span class="selo-ambiente">Dados simulados</span></div>
+<nav aria-label="Painéis"><a href="index.html" aria-current="page">Enfermagem</a><a href="medico.html">Médico</a><a href="mobile.html">Críticos</a></nav></div></header>
+<main>
+  <div class="titulo"><h1>Painel de enfermagem</h1><span id="conexao" role="status">Conectando…</span></div>
+  <a class="atalho" href="#atendimento">Ir para alertas</a>
+  <div id="leituras"></div>
+  <section class="box" id="atendimento">
+    <h2>Alertas em atendimento <span id="quantidade">0</span></h2>
+    <p id="retorno" role="status"></p>
+    <div id="ativos"></div>
+    <details><summary>Alertas resolvidos (<span id="total-resolvidos">0</span>)</summary><div id="resolvidos"></div></details>
+  </section>
+  <details class="box simulador-box" id="simulador-demo">
+    <summary>Área de demonstração · Controle do simulador</summary>
+    <p class="muted">Envia comandos via MQTT para o simulador Java provocar crise ou simular recuperação imediata para a rotina.</p>
+    <div class="sim-controles">
+      <div><label for="sim-leito">Leito</label><select id="sim-leito"></select></div>
+      <div><label for="sim-sinal">Sinal</label><select id="sim-sinal"></select></div>
+      <div class="botoes sim-acoes">
+        <button type="button" id="sim-crise" class="perigo">Provocar crise</button>
+        <button type="button" id="sim-rotina" class="principal">Simular recuperação (Rotina)</button>
+      </div>
+    </div>
+    <p id="sim-estado" class="muted"></p>
+    <p id="sim-retorno" class="muted" role="status"></p>
+  </details>
+</main>
+<dialog id="dialogo" aria-labelledby="acao-titulo">
+  <form id="formulario">
+    <h2 id="acao-titulo">Reconhecer alerta</h2>
+    <p id="contexto"></p>
+    <label for="usuario">Identificação do profissional</label>
+    <input id="usuario" required maxlength="80" autocomplete="off" placeholder="Ex.: enf-01">
+    <div id="grupo-motivo" hidden><label for="motivo">Motivo da resolução</label>
+    <textarea id="motivo" rows="3" maxlength="500"></textarea></div>
+    <div class="botoes"><button type="button" id="cancelar">Cancelar</button>
+    <button class="principal" type="submit" id="confirmar">Confirmar</button></div>
+  </form>
+</dialog>
 </body>
 </html>

@@ -18,15 +18,15 @@ public final class RegraTemperatura implements RegraClassificacao {
         if (temperatura <= 35.0 || temperatura >= 39.0) {
             return new ResultadoClassificacao(
                     Prioridade.CRITICO,
-                    "Temperatura corporal na faixa crítica da simulação");
+                    "Temperatura corporal na faixa crítica");
         }
         if (temperatura >= 36.0 && temperatura <= 37.5) {
             return new ResultadoClassificacao(
                     Prioridade.ROTINA,
-                    "Temperatura corporal na faixa de rotina da simulação");
+                    "Temperatura corporal na faixa de rotina");
         }
         return new ResultadoClassificacao(
                 Prioridade.ATENCAO,
-                "Temperatura corporal na faixa de atenção da simulação");
+                "Temperatura corporal na faixa de atenção");
     }
 }
