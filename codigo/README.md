@@ -2,7 +2,7 @@
 
 Sistema acadêmico em Java que simula a coleta contínua de sinais vitais em cinco leitos fictícios (**frequência cardíaca**, **temperatura**, **saturação de oxigênio** e **pressão arterial**), classifica a gravidade das medições em tempo real, gerencia o ciclo de atendimento de alertas críticos e exibe o acompanhamento em três painéis web sincronizados via **Mosquitto (MQTT e WebSocket)**.
 
-> **Navegação rápida:** [Arquitetura](#visão-geral-da-arquitetura) · [Como executar](#execução-completa-do-sistema) · [Roteiro de demonstração](#roteiro-de-demonstração-ponta-a-ponta) · [Três telas (Etapa 6)](#as-três-telas-etapa-6) · [Cinco padrões](#os-cinco-padrões-de-software-no-codigo) · [Testes (147 casos)](#testes-automatizados-junit--147-casos) · [Estrutura e pacotes](#estrutura-do-projeto-e-pacotes-java) · [Limitações e queda do broker](#limitações-conhecidas-e-ensaio-de-queda-do-broker) · [Validações por terminal](#validações-isoladas-por-terminal-etapas-1-a-5) · [Ambiente](#ambiente-utilizado)
+> **Navegação rápida:** [Arquitetura](#visão-geral-da-arquitetura) · [Instalação e execução](#instalação-testes-e-execução) · [Roteiro de demonstração](#roteiro-de-demonstração-ponta-a-ponta) · [Três telas (Etapa 6)](#as-três-telas-etapa-6) · [Cinco padrões](#os-cinco-padrões-de-software-no-código) · [Testes (147 casos)](#testes-automatizados-junit--147-casos) · [Estrutura e pacotes](#estrutura-do-projeto-e-pacotes-java) · [Limitações e queda do broker](#limitações-conhecidas-e-ensaio-de-queda-do-broker) · [Validações por terminal](#validações-isoladas-por-terminal-etapas-1-a-5) · [Ambiente](#ambiente-utilizado)
 
 ---
 
@@ -39,19 +39,57 @@ Para evitar mistura entre o estado do sensor e o ciclo de atendimento, o projeto
 
 ---
 
-## Execução completa do sistema
+## Instalação, testes e execução
 
-> **Importante:** todos os comandos abaixo partem da **pasta raiz do código** (o diretório que contém este `README.md`, o `docker-compose.yml`, `backend/` e `frontend/`).
+> **Importante:** os comandos da raiz partem da pasta que contém este `README.md`, o `docker-compose.yml`, `backend/` e `frontend/` (no pacote de entrega, é a pasta `codigo/`).
 
-### Pré-requisitos
+### 1. Preparação do ambiente (apenas uma vez)
 
-- **Docker Desktop** em execução.
-- **JDK** compatível com compilação Java 17 (testado com OpenJDK 25.0.5 LTS) e **Maven** no `PATH` (`mvn -version`).
-- Navegador moderno e um servidor HTTP local para o `frontend/` (extensão **Live Server** do VS Code ou `python -m http.server`).
+- **Java JDK 17 ou superior** (ex.: Eclipse Temurin 17 ou 25 LTS; testado com OpenJDK 25.0.5 LTS).
+- **Apache Maven** no `PATH`.
+- **Docker Desktop** aberto e totalmente iniciado (motor rodando).
+- **Python 3** (para servir as páginas web) **ou** a extensão **Live Server** do VS Code.
 
-### Ordem de inicialização (5 passos)
+Caso algum instalador peça, reinicie o computador e confira as ferramentas no terminal (PowerShell ou CMD):
 
-**1. Terminal 1 — Subir o broker Mosquitto (na raiz do projeto):**
+```powershell
+javac -version
+mvn -version
+docker compose version
+python --version   # ou py --version (opcional se usar Live Server no VS Code)
+```
+
+<details>
+<summary>Solução de problemas no Windows (se <code>javac</code>/<code>mvn</code> não forem reconhecidos ou faltar <code>JAVA_HOME</code>)</summary>
+
+Execute os comandos abaixo no **PowerShell** ajustando o caminho da pasta para a versão exata do JDK instalada na sua máquina:
+
+```powershell
+$jdk = "C:\Program Files\Eclipse Adoptium\jdk-17.0.x-hotspot"
+[Environment]::SetEnvironmentVariable("JAVA_HOME", $jdk, "User")
+$p = [Environment]::GetEnvironmentVariable("Path", "User")
+[Environment]::SetEnvironmentVariable("Path", "$jdk\bin;$p", "User")
+```
+
+> **Importante:** após executar os comandos, **feche a janela do PowerShell e abra um novo terminal** para que as variáveis de ambiente passem a valer.
+
+</details>
+
+### 2. Executar os testes automatizados (opcional, sem Docker)
+
+Resultado esperado: **`147` testes executados, `0` falhas, `0` erros (`BUILD SUCCESS`)** — veja o detalhamento completo das 9 classes na seção [Testes automatizados](#testes-automatizados-junit--147-casos).
+
+```powershell
+cd backend
+mvn clean test
+cd ..
+```
+
+### 3. Iniciar os serviços (5 terminais, em ordem)
+
+> Inicie os **Terminais 2, 3 e 4 um por vez**, aguardando a mensagem de pronto antes de abrir o próximo (evita conflito de `mvn compile` simultâneo na pasta `backend/target`).
+
+**Terminal 1 — Broker MQTT (na raiz do código / pasta `codigo`):**
 
 ```powershell
 docker compose up -d mosquitto
@@ -60,37 +98,39 @@ docker compose ps
 
 > Se quiser limpar estados retidos de execuções anteriores antes de iniciar uma demonstração, execute `docker compose restart mosquitto` (o broker usa `persistence false`).
 
-**2. Terminal 2 — Iniciar o Notificador (aguarde `Notificador pronto`):**
+**Terminal 2 — Notificador (na pasta `backend`, aguarde `Notificador pronto`):**
 
 ```powershell
-Set-Location .\backend
 mvn compile exec:java "-Dexec.mainClass=br.cefetrj.iot.notificador.NotificadorMain"
 ```
 
-**3. Terminal 3 — Iniciar o Classificador (aguarde `Classificador pronto`):**
+**Terminal 3 — Classificador (na pasta `backend`, aguarde `Classificador pronto`):**
 
 ```powershell
-Set-Location .\backend
 mvn compile exec:java "-Dexec.mainClass=br.cefetrj.iot.classificador.ClassificadorMain"
 ```
 
-**4. Terminal 4 — Iniciar o Simulador (aguarde `Controle MQTT ativo`):**
+**Terminal 4 — Simulador (na pasta `backend`, aguarde `Controle MQTT ativo`):**
 
 ```powershell
-Set-Location .\backend
 mvn compile exec:java "-Dexec.mainClass=br.cefetrj.iot.sensores.SimuladorMain"
 ```
 
 O simulador publica os cinco leitos a cada **1,5 s** (20 leituras por rodada): `uti/leito-01` (`PAC-101`), `uti/leito-02` (`PAC-102`), `enfermaria/leito-03` (`PAC-201`), `enfermaria/leito-04` (`PAC-202`) e `enfermaria/leito-05` (`PAC-203`).
 
-**5. Servir as páginas web:**
+**Terminal 5 — Servir as páginas web (escolha uma opção):**
 
-- **Opção 1 (VS Code Live Server):** clique com o botão direito em [frontend/index.html](frontend/index.html) → **Open with Live Server**. O arquivo [.vscode/settings.json](.vscode/settings.json) já está configurado para ignorar `**/backend/**` e `**/*.log`, evitando recarregamentos automáticos quando o notificador grava em `backend/logs/alertas.log`.
-- **Opção 2 (Terminal 5 — Python na raiz do projeto):**
+- **Opção 1 (Python na raiz do código / pasta `codigo`):**
 
 ```powershell
 python -m http.server 5500 -d frontend
+# Se usar o launcher py no Windows:
+# py -m http.server 5500 -d frontend
 ```
+
+- **Opção 2 (VS Code Live Server, sem Python):** clique com o botão direito em [frontend/index.html](frontend/index.html) → **Open with Live Server**. O arquivo [.vscode/settings.json](.vscode/settings.json) já está configurado para ignorar `**/backend/**` e `**/*.log`, evitando recarregamentos automáticos quando o notificador grava em `backend/logs/alertas.log`.
+
+### 4. Acessar os painéis no navegador
 
 | Tela | Arquivo | URL padrão (porta 5500) |
 | --- | --- | --- |
@@ -118,11 +158,12 @@ python -m http.server 5500 -d frontend
    - O alerta vai para **`RESOLVIDO`** nas três telas com a linha do tempo completa (abertura, reconhecimento e resolução), e nenhuma nova ocorrência reabre.
 6. Para demonstrar **múltiplos sinais críticos no mesmo leito**, provoque `Frequência` e `Pressão` no `Leito 01`, reconheça e resolva apenas um deles e observe que cada sinal mantém seu próprio ciclo e cartão independente enquanto o leito permanece em crise pelo outro sinal.
 
-### Encerramento e limpeza entre demonstrações
+### 5. Encerrar a execução
 
-- No **Simulador** (Terminal 4): digite `sair` e pressione `Enter`.
-- No **Classificador** e no **Notificador** (Terminais 3 e 2): pressione `Enter`.
-- No **Broker** (Terminal 1, na raiz): execute `docker compose down`.
+- **Simulador** (Terminal 4): digite `sair` e pressione `Enter`.
+- **Classificador e Notificador** (Terminais 3 e 2): pressione `Enter`.
+- **Servidor web** (Terminal 5): pressione `Ctrl+C` (ou encerre o Live Server no VS Code).
+- **Broker MQTT** (Terminal 1, na raiz do código / pasta `codigo`): execute `docker compose down`.
 
 ---
 
@@ -214,12 +255,7 @@ stateDiagram-v2
 
 ## Testes automatizados (JUnit — 147 casos)
 
-Os testes rodam sem o broker ligado (usando publicadores em memória e diretórios temporários):
-
-```powershell
-Set-Location .\backend
-mvn clean test
-```
+Todos os testes rodam offline (sem Docker nem Mosquitto ligados), usando publicadores em memória e diretórios temporários (veja como executar no [passo 2](#2-executar-os-testes-automatizados-opcional-sem-docker)):
 
 | Classe de teste | Casos | O que verifica |
 | --- | ---: | --- |
